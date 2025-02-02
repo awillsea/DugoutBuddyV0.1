@@ -4,7 +4,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   return (
+    
     <Tabs screenOptions={{  tabBarActiveTintColor: '#2563eb', headerShown: true }}>
+     
       <Tabs.Screen
         name="teams"
         options={{
@@ -39,6 +41,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="account" size={24} color="white"  />
           ),
+        }}
+      />
+       <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
         }}
       />
     </Tabs>

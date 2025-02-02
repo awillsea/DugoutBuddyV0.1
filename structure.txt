@@ -1,0 +1,30 @@
+
+C:\Users\Shade Slayer\source\repos\DugoutBuddyV0.1
+├── app
+├── app.config.js
+├── app.json
+├── assets
+├── babel.config.js
+├── components
+├── constants
+├── firebase.json
+├── firebaseConfig.js
+├── firestore.indexes.json
+├── firestore.rules
+├── hooks
+├── package-lock.json
+├── package.json
+├── README.md
+├── scripts
+├── src
+├── storage.rules
+├── structure.txt
+├── tailwind.config.js
+└── tsconfig.json
+
+directory: 7 file: 14
+
+ignored: directory (1)
+
+
+[2K[1G

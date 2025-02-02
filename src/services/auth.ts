@@ -1,42 +1,34 @@
-import { initializeApp } from 'firebase/app';
+import { auth } from '@/src//config/firebase';
 import { 
-  getAuth, 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut,
-  Auth
+  createUserWithEmailAndPassword, 
+  signOut 
 } from 'firebase/auth';
 
-const firebaseConfig = {
-  // Your Firebase config
-  apiKey: "your-api-key",
-  authDomain: "your-auth-domain",
-  projectId: "your-project-id",
-  storageBucket: "your-storage-bucket",
-  messagingSenderId: "your-messaging-sender-id",
-  appId: "your-app-id"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Initialize Auth
-export const auth: Auth = getAuth(app);
-
-// Auth service functions
 export const authService = {
   signIn: async (email: string, password: string) => {
-    return await signInWithEmailAndPassword(auth, email, password);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      throw error;
+    }
   },
-  
+
   signUp: async (email: string, password: string) => {
-    return await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      throw error;
+    }
   },
-  
+
   logout: async () => {
-    return await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (error) {
+      throw error;
+    }
   }
 };
 
-// Export types if needed
-export type AuthService = typeof authService;
+export { auth };
