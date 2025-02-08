@@ -1,9 +1,18 @@
-import { auth } from '@/src//config/firebase';
+import { auth } from '@/src/config/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut 
 } from 'firebase/auth';
+import { doc, setDoc, getFirestore } from 'firebase/firestore';
+
+const firestore = getFirestore();
+
+interface UserData {
+  name: string;
+  email: string;
+  createdAt: Date;
+}
 
 export const authService = {
   signIn: async (email: string, password: string) => {
@@ -14,9 +23,19 @@ export const authService = {
     }
   },
 
-  signUp: async (email: string, password: string) => {
+  signUp: async (email: string, password: string, name: string) => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Store additional user data in Firestore
+      await setDoc(doc(firestore, 'users', user.uid), {
+        name,
+        email,
+        createdAt: new Date(),
+      });
+
+      return user;
     } catch (error) {
       throw error;
     }

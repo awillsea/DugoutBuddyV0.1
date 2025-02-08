@@ -1,105 +1,180 @@
 // src/services/team/teamService.ts
-import { 
-    collection, 
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    doc,
-    getDoc,
-    getDocs,
-    query,
-    where,
-    Timestamp
-   } from 'firebase/firestore';
-   import { Team, CreateTeamInput, Player } from '../../types/team';
-   import { auth, db } from '../../config/firebase';
-   
-   class TeamService {
-    async createTeam(input: CreateTeamInput): Promise<string> {
-      if (!auth.currentUser) throw new Error('Must be logged in to create a team');
-   
-      const teamData = {
-        ...input,
-        managerId: auth.currentUser.uid,
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  serverTimestamp,
+  getFirestore,
+} from "firebase/firestore";
+import { v4 as uuidv4 } from "uuid";
+import { auth } from "@/src/config/firebase";
+import { Team, TeamCreationData, Position } from "@/src/types/team";
+
+interface PlayerCreationData {
+  name: string;
+  number: string;
+  positions: Position[];
+}
+
+interface PlayerUpdateData {
+  name?: string;
+  number?: string;
+  positions?: Position[];
+  isActive?: boolean;
+}
+const firestore = getFirestore();
+
+export const teamService = {
+  createTeam: async (data: { name: string; season: string }) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("User must be authenticated");
+
+      const newTeam: Partial<Team> = {
+        name: data.name,
+        season: data.season,
+        managerId: user.uid,
+        createdAt: new Date(),
+        updatedAt: new Date(),
         players: [],
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
-      };
-   
-      const docRef = await addDoc(collection(db, 'teams'), teamData);
-      return docRef.id;
-    }
-   
-    async getUserTeams(): Promise<Team[]> {
-      if (!auth.currentUser) throw new Error('Must be logged in to fetch teams');
-   
-      const teamsQuery = query(
-        collection(db, 'teams'),
-        where('managerId', '==', auth.currentUser.uid)
-      );
-   
-      const snapshot = await getDocs(teamsQuery);
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Team));
-    }
-   
-    async getTeam(teamId: string): Promise<Team | null> {
-      const docRef = doc(db, 'teams', teamId);
-      const docSnap = await getDoc(docRef);
-      
-      if (!docSnap.exists()) return null;
-      
-      return {
-        id: docSnap.id,
-        ...docSnap.data()
-      } as Team;
-    }
-   
-    async addPlayer(teamId: string, player: Omit<Player, 'id'>): Promise<void> {
-      const teamRef = doc(db, 'teams', teamId);
-      const teamSnap = await getDoc(teamRef);
-      
-      if (!teamSnap.exists()) throw new Error('Team not found');
-      
-      const team = teamSnap.data() as Team;
-      const newPlayer = {
-        ...player,
-        id: crypto.randomUUID(),
+        settings: {
+          defaultGameDuration: 120,
+          defaultInnings: 7,
+          minimumPlayers: 9,
+          autoSubstitutionEnabled: false,
+          notificationsEnabled: true,
+          privacyLevel: "private",
+        },
         stats: {
-          gamesPlayed: 0,
-          atBats: 0,
-          hits: 0,
-          runs: 0,
-          rbis: 0,
-          avg: 0
-        }
+          totalGames: 0,
+          wins: 0,
+          losses: 0,
+          ties: 0,
+          runsScored: 0,
+          runsAllowed: 0,
+          winningPercentage: 0,
+          streak: {
+            type: "W",
+            count: 0,
+          },
+        },
       };
-      
-      await updateDoc(teamRef, {
-        players: [...team.players, newPlayer],
-        updatedAt: Timestamp.now()
+
+      const teamsRef = collection(firestore, "teams");
+      const docRef = await addDoc(teamsRef, newTeam);
+
+      return docRef.id;
+    } catch (error) {
+      console.error("Error creating team:", error);
+      throw error;
+    }
+  },
+
+  getUserTeams: async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("User must be authenticated");
+
+      const teamsRef = collection(firestore, "teams");
+      const q = query(teamsRef, where("managerId", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Team[];
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+      throw error;
+    }
+  },
+
+  getTeam: async (teamId: string) => {
+    try {
+      const teamDoc = await getDoc(doc(firestore, "teams", teamId));
+      if (!teamDoc.exists()) return null;
+      return { id: teamDoc.id, ...teamDoc.data() } as Team;
+    } catch (error) {
+      console.error("Error fetching team:", error);
+      throw error;
+    }
+  },
+
+  addPlayer: async (teamId: string, playerData: PlayerCreationData) => {
+    try {
+      const docRef = doc(firestore, "teams", teamId);
+      const newPlayer = {
+        id: uuidv4(),
+        ...playerData,
+        isActive: true,
+        stats: {
+          games: 0,
+          atBats: 0,
+          runs: 0,
+          hits: 0,
+          singles: 0,
+          doubles: 0,
+          triples: 0,
+          homeRuns: 0,
+          rbis: 0,
+          walks: 0,
+          strikeouts: 0,
+          battingAverage: 0,
+          onBasePercentage: 0,
+          sluggingPercentage: 0,
+          ops: 0,
+        },
+        attendance: {
+          present: 0,
+          absent: 0,
+          late: 0,
+          lastGames: [],
+        },
+      };
+
+      await updateDoc(docRef, {
+        players: arrayUnion(newPlayer),
       });
+
+      return newPlayer.id;
+    } catch (error) {
+      console.error("Error adding player:", error);
+      throw error;
     }
-   
-    async removePlayer(teamId: string, playerId: string): Promise<void> {
-      const teamRef = doc(db, 'teams', teamId);
-      const teamSnap = await getDoc(teamRef);
-      
-      if (!teamSnap.exists()) throw new Error('Team not found');
-      
-      const team = teamSnap.data() as Team;
-      
-      await updateDoc(teamRef, {
-        players: team.players.filter(p => p.id !== playerId),
-        updatedAt: Timestamp.now()
-      });
+  },
+
+  updatePlayer: async (
+    teamId: string,
+    playerId: string,
+    playerData: PlayerUpdateData,
+  ) => {
+    try {
+      const docRef = doc(firestore, "teams", teamId);
+      const teamDoc = await getDoc(docRef);
+
+      if (!teamDoc.exists()) throw new Error("Team not found");
+
+      const team = teamDoc.data() as Team;
+      const playerIndex = team.players.findIndex((p) => p.id === playerId);
+
+      if (playerIndex === -1) throw new Error("Player not found");
+
+      const updatedPlayers = [...team.players];
+      updatedPlayers[playerIndex] = {
+        ...updatedPlayers[playerIndex],
+        ...playerData,
+      };
+
+      await updateDoc(docRef, { players: updatedPlayers });
+    } catch (error) {
+      console.error("Error updating player:", error);
+      throw error;
     }
-   
-    async deleteTeam(teamId: string): Promise<void> {
-      await deleteDoc(doc(db, 'teams', teamId));
-    }
-   }
-   
-   export const teamService = new TeamService();
+  },
+};
