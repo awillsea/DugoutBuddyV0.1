@@ -12,18 +12,23 @@ import { router } from "expo-router";
 import { gameService } from "@/src/services/game/gameService";
 import { Game } from "@/src/types/game";
 import { formatDate } from "@/src/utils/dateUtils";
+import { useTeam } from '@/src/hooks/useTeam';
 
 export default function GamesScreen() {
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const { currentTeam } = useTeam();
+  
   useEffect(() => {
-    loadGames();
-  }, []);
+    if (currentTeam?.id) {
+      loadGames();
+    }
+  }, [currentTeam]);
 
   const loadGames = async () => {
     try {
-      const teamGames = await gameService.getTeamGames(/* current team ID */);
+      if (!currentTeam?.id) return;
+      const teamGames = await gameService.getTeamGames(currentTeam.id);
       setGames(teamGames);
     } catch (error) {
       console.error("Error loading games:", error);

@@ -8,13 +8,14 @@ type User = {
   email: string | null;
 };
 
-type AuthContextType = {
-  user: User | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-};
+// src/context/AuthContext.tsx
+interface AuthContextType {
+    user: User | null;
+    loading: boolean;
+    signIn: (email: string, password: string) => Promise<void>;
+    signUp: (email: string, password: string, name: string) => Promise<User>;
+    signOut: () => Promise<void>;
+  }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

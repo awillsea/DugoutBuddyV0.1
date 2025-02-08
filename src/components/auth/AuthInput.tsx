@@ -1,11 +1,21 @@
-import { TextInput, TextInputProps } from 'react-native';
+import { TextInput, TextInputProps, StyleSheet } from 'react-native';
 
 export function AuthInput(props: TextInputProps) {
   return (
     <TextInput
-      className="border border-gray-300 rounded-lg p-3 mb-4"
+      style={styles.input}
       autoCapitalize="none"
       {...props}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  input: {
+    borderWidth: 1,
+    borderColor: '#d1d5db', // gray-300 equivalent
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+});

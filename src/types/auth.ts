@@ -1,8 +1,8 @@
-export type User = {
-    id: string;
-    email: string;
-    // Add other user fields
-  };
+// export type User = {
+//     id: string;
+//     email: string;
+//     // Add other user fields
+//   };
   
   export type AuthContextType = {
     user: User | null;
@@ -15,11 +15,21 @@ export type User = {
   // src/services/auth.ts
   import { initializeApp } from 'firebase/app';
   import { 
+    User,
     getAuth, 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword,
     signOut,
   } from 'firebase/auth';
+  
+  export type UseAuth = {
+    user: User | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    error: string | null;
+    signIn: (email: string, password: string) => Promise<void>;
+    signUp: (email: string, password: string, name: string) => Promise<void>;
+  };
   
   const firebaseConfig = {
     // Your Firebase config

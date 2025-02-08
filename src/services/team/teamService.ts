@@ -14,7 +14,8 @@ import {
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { auth } from "@/src/config/firebase";
-import { Team, TeamCreationData, Position } from "@/src/types/team";
+import { Team, TeamCreationData, Position,TeamSettings } from "@/src/types/team";
+import { Player, PlayerCreationData, PlayerStats } from '@/src/types/player';
 
 interface PlayerCreationData {
   name: string;
@@ -130,25 +131,18 @@ export const teamService = {
           sluggingPercentage: 0,
           ops: 0,
         },
-        attendance: {
-          present: 0,
-          absent: 0,
-          late: 0,
-          lastGames: [],
-        },
       };
-
+  
       await updateDoc(docRef, {
         players: arrayUnion(newPlayer),
       });
-
+  
       return newPlayer.id;
     } catch (error) {
       console.error("Error adding player:", error);
       throw error;
     }
   },
-
   updatePlayer: async (
     teamId: string,
     playerId: string,
