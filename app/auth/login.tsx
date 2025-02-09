@@ -10,28 +10,29 @@ import {
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
-import { router } from 'expo-router';
 import { authService } from '@/src/services/auth';
+import { useAuth } from '@/src/context/AuthContext';
+import { router } from 'expo-router';
+
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { signIn } = useAuth();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
     try {
-      setIsLoading(true);
-      await authService.signIn(email, password);
-      router.replace('/(tabs)');
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
+      setLoading(true);
+      await signIn(email, password);
+      // After successful login, redirect to teams
+      router.replace('/(tabs)/teams');
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Login Failed', 'Please check your email and password.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 

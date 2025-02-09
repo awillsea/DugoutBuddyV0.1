@@ -1,8 +1,8 @@
-// src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { router } from 'expo-router';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, authService } from '../services/auth';
+import { ActivityIndicator, View } from 'react-native';
 
 export type User = {
   id: string;
@@ -19,7 +19,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Add this hook export
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -33,16 +32,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('Setting up auth state listener');
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      console.log('Auth state changed:', firebaseUser ? 'user exists' : 'no user');
       if (firebaseUser) {
         setUser({
           id: firebaseUser.uid,
           email: firebaseUser.email,
         });
-        router.replace('/(tabs)');
       } else {
         setUser(null);
-        router.replace('/(tabs)');
       }
       setLoading(false);
     });
@@ -61,16 +60,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email: firebaseUser.email,
       };
     },
-    // Make sure this matches your auth service
     signOut: async () => {
-      await authService.logout(); // If your auth service uses 'logout' instead of 'signOut'
+      await authService.logout();
       setUser(null);
     },
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
