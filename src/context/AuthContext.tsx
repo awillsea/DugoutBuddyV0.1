@@ -1,25 +1,34 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+// src/context/AuthContext.tsx
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { router } from 'expo-router';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, authService } from '../services/auth';
 
-type User = {
+export type User = {
   id: string;
   email: string | null;
 };
 
-// src/context/AuthContext.tsx
 interface AuthContextType {
-    user: User | null;
-    loading: boolean;
-    signIn: (email: string, password: string) => Promise<void>;
-    signUp: (email: string, password: string, name: string) => Promise<User>;
-    signOut: () => Promise<void>;
-  }
+  user: User | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<User>;
+  signOut: () => Promise<void>;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Add this hook export
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,14 +39,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: firebaseUser.uid,
           email: firebaseUser.email,
         });
-        router.replace('/(tabs)'); // User is logged in, show tabs
+        router.replace('/(tabs)');
       } else {
         setUser(null);
-        router.replace('/'); // No user, show landing page
+        router.replace('/(tabs)');
       }
       setLoading(false);
     });
-  
+
     return unsubscribe;
   }, []);
 
@@ -45,8 +54,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     loading,
     signIn: authService.signIn,
-    signUp: authService.signUp,
-    logout: authService.logout,
+    signUp: async (email: string, password: string, name: string) => {
+      const firebaseUser = await authService.signUp(email, password, name);
+      return {
+        id: firebaseUser.uid,
+        email: firebaseUser.email,
+      };
+    },
+    // Make sure this matches your auth service
+    signOut: async () => {
+      await authService.logout(); // If your auth service uses 'logout' instead of 'signOut'
+      setUser(null);
+    },
   };
 
   return (
@@ -55,13 +74,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export default AuthContext;

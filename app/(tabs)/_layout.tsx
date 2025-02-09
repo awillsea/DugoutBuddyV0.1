@@ -1,52 +1,35 @@
-// app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 
 export default function TabLayout() {
   return (
-    
-    <Tabs screenOptions={{  tabBarActiveTintColor: '#2563eb', headerShown: true }}>
-     
-      <Tabs.Screen
-        name="teams"
-        options={{
-          title: 'Teams',
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="account-group" size={24} color="white" />
-          ),
-        }}
-      />
+    <Tabs>
       <Tabs.Screen
         name="games"
         options={{
           title: 'Games',
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="baseball" size={24} color="white"  />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="stats"
-        options={{
-          title: 'Stats',
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="chart-bar" size={24} color="white"  />
-          ),
+          tabBarIcon: ({ color }) => <FontAwesome name="gamepad" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="account" size={24} color="white"  />
-          ),
+          tabBarIcon: ({ color }) => <FontAwesome name="user" size={24} color={color} />,
         }}
       />
-       <Tabs.Screen
-        name="index"
+      <Tabs.Screen
+        name="stats"
         options={{
-          title: 'Home',
+          title: 'Stats',
+          tabBarIcon: ({ color }) => <FontAwesome name="bar-chart" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="teams"
+        options={{
+          title: 'Teams',
+          tabBarIcon: ({ color }) => <FontAwesome name="users" size={24} color={color} />,
         }}
       />
     </Tabs>

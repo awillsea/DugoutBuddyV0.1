@@ -11,25 +11,29 @@ import {
 import { router } from "expo-router";
 import { gameService } from "@/src/services/game/gameService";
 import { Game } from "@/src/types/game";
-import { formatDate } from "@/src/utils/dateUtils";
-import { useTeam } from '@/src/hooks/useTeam';
+import { Timestamp } from 'firebase/firestore'; // Add this import
 
 export default function GamesScreen() {
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { currentTeam } = useTeam();
-  
+
   useEffect(() => {
-    if (currentTeam?.id) {
-      loadGames();
-    }
-  }, [currentTeam]);
+    const unsubscribe = gameService.subscribeToGames((updatedGames) => {
+      setGames(updatedGames);
+      setIsLoading(false);
+    });
+
+    // Cleanup subscription when component unmounts
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const loadGames = async () => {
     try {
-      if (!currentTeam?.id) return;
-      const teamGames = await gameService.getTeamGames(currentTeam.id);
-      setGames(teamGames);
+      // For testing, just get all games
+      const allGames = await gameService.getAllGames();
+      setGames(allGames);
     } catch (error) {
       console.error("Error loading games:", error);
     } finally {
@@ -43,31 +47,26 @@ export default function GamesScreen() {
       onPress={() => router.push(`/games/${item.id}`)}
     >
       <View style={styles.gameHeader}>
-        <Text style={styles.dateText}>{formatDate(item.date)}</Text>
+        <Text style={styles.dateText}>
+          {item.date instanceof Timestamp 
+            ? item.date.toDate().toLocaleDateString()
+            : new Date(item.date).toLocaleDateString()}
+        </Text>
         <Text style={styles.statusTag}>{item.status}</Text>
       </View>
 
       <View style={styles.scoreContainer}>
-        <View style={styles.teamScore}>
-          <Text style={styles.teamName}>Your Team</Text>
-          <Text style={styles.scoreText}>{item.score.team}</Text>
-        </View>
         <Text style={styles.vsText}>VS</Text>
-        <View style={styles.teamScore}>
-          <Text style={styles.teamName}>{item.opponentName}</Text>
-          <Text style={styles.scoreText}>{item.score.opponent}</Text>
-        </View>
+        <Text style={styles.teamName}>{item.opponentName}</Text>
+      </View>
+
+      <View style={styles.scoreContainer}>
+        <Text style={styles.scoreText}>{item.score?.team || 0}</Text>
+        <Text style={styles.vsText}>-</Text>
+        <Text style={styles.scoreText}>{item.score?.opponent || 0}</Text>
       </View>
     </Pressable>
   );
-
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -75,23 +74,30 @@ export default function GamesScreen() {
         <Text style={styles.title}>Games</Text>
         <Pressable
           style={styles.newGameButton}
-          onPress={() => router.push("/games/new")}
+          onPress={() => {
+            console.log('Navigating to new game');
+            router.push("/games/new")}}
         >
           <Text style={styles.newGameButtonText}>New Game</Text>
         </Pressable>
       </View>
 
-      <FlatList
-        data={games}
-        renderItem={renderGameItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No games scheduled</Text>
-          </View>
-        )}
-      />
+      {isLoading ? (
+        <ActivityIndicator size="large" color="#2563eb" />
+      ) : (
+        <FlatList
+          data={games}
+          renderItem={renderGameItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No games found</Text>
+              <Text style={styles.emptyStateSubText}>Create a new game to get started</Text>
+            </View>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -100,11 +106,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f3f4f6",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
   },
   header: {
     flexDirection: "row",
@@ -165,21 +166,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  teamScore: {
-    alignItems: "center",
-    flex: 1,
+    marginTop: 8,
   },
   teamName: {
     fontSize: 16,
     fontWeight: "500",
     color: "#111827",
-    marginBottom: 4,
+    flex: 1,
   },
   scoreText: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#2563eb",
+    flex: 1,
   },
   vsText: {
     fontSize: 16,
@@ -191,8 +190,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyStateText: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: "600",
     color: "#6b7280",
     textAlign: "center",
+  },
+  emptyStateSubText: {
+    fontSize: 14,
+    color: "#9ca3af",
+    textAlign: "center",
+    marginTop: 8,
   },
 });

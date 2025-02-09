@@ -1,81 +1,16 @@
 // src/types/game.ts
-import { Team, Player } from './team';
+import { Timestamp } from 'firebase/firestore';
+import { Position } from './team';
 
-export interface Game {
-  id: string;
-  teamId: string;
-  opponentName: string;
-  date: Date;
-  location?: string;
-  isHome: boolean;
-  status: 'scheduled' | 'in-progress' | 'completed';
-  score: {
-    team: number;
-    opponent: number;
-  };
-  innings: Inning[];
-  lineup: LineupPlayer[];
-  stats: GameStats;
-}
-
-export interface Inning {
-  number: number;
-  topScore: number;
-  bottomScore: number;
-  events: GameEvent[];
-}
-
-export interface LineupPlayer extends Player {
-  lineupPosition: number;
-  gameStats: GamePlayerStats;
-}
-
-export interface GameEvent {
-  id: string;
-  timestamp: Date;
-  inning: number;
-  isTopInning: boolean;
-  type: 'atBat' | 'substitution' | 'scoring';
-  playerId: string;
-  result: AtBatResult | SubstitutionResult | ScoringResult;
-  description: string;
-}
-
-export type AtBatResult = 
-  | '1B' // Single
-  | '2B' // Double
-  | '3B' // Triple
-  | 'HR' // Home Run
-  | 'BB' // Walk
-  | 'HBP' // Hit By Pitch
-  | 'OUT' // Out
-  | 'K' // Strikeout
-  | 'FC' // Fielder's Choice
-  | 'E' // Error
-  | 'SF' // Sacrifice Fly
-  | 'SAC' // Sacrifice Bunt
-;
-
-export interface SubstitutionResult {
-  outPlayer: string;
-  inPlayer: string;
-  position: string;
-}
-
-export interface ScoringResult {
-  runScored: boolean;
-  rbi: boolean;
-  scoringPlayer: string;
+export enum GameStatus {
+  SCHEDULED = 'SCHEDULED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  POSTPONED = 'POSTPONED'
 }
 
 export interface GameStats {
-  hits: number;
-  runs: number;
-  errors: number;
-  leftOnBase: number;
-}
-
-export interface GamePlayerStats {
   atBats: number;
   runs: number;
   hits: number;
@@ -89,4 +24,60 @@ export interface GamePlayerStats {
   sacrifices: number;
   stolenBases: number;
   caughtStealing: number;
+}
+
+export interface LineupPlayer {
+  id: string;
+  name: string;
+  number: string;
+  positions: Position[];
+  lineupPosition: number;
+  gameStats: GameStats;
+}
+
+export interface Inning {
+  number: number;
+  topOfInning: boolean;
+  outs: number;
+  runs: number;
+  hits: number;
+  errors: number;
+}
+
+export interface GameEvent {
+  id: string;
+  timestamp: Timestamp;
+  inning: number;
+  topOfInning: boolean;
+  playerId?: string;
+  eventType: 'AT_BAT' | 'SUBSTITUTION' | 'STOLEN_BASE' | 'CAUGHT_STEALING' | 'OTHER';
+  result?: 'SINGLE' | 'DOUBLE' | 'TRIPLE' | 'HOME_RUN' | 'WALK' | 'STRIKEOUT' | 'OUT' | 'ERROR' | 'FIELDERS_CHOICE' | 'SACRIFICE';
+  runsScored: number;
+  rbi: number;
+  isOpponent: boolean;
+  description?: string;
+}
+
+export interface Game {
+  id: string;
+  teamId: string;
+  opponentName: string;
+  date: Timestamp;
+  isHome: boolean;
+  status: GameStatus;
+  score: {
+    team: number;
+    opponent: number;
+  };
+  currentInning: {
+    number: number;
+    topOfInning: boolean;
+  };
+  innings: Inning[];
+  lineup: LineupPlayer[];
+  events: GameEvent[];
+  startTime?: Timestamp;
+  endTime?: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }

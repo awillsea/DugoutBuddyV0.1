@@ -36,3 +36,9 @@ export interface PlayerCreationData {
     ops: number;
     // etc.
   }
+  export interface LineupPlayer {
+    id: string;
+    name: string;
+    number: string;
+    // ... other properties specific to lineup
+  }
