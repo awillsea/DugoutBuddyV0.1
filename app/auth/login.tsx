@@ -42,7 +42,7 @@ export default function Login() {
       style={styles.container}
     >
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Welcome Back!</Text>
+        <Text style={styles.title}>Welcome To DugoutBuddy!</Text>
         
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Email</Text>

@@ -1,7 +1,7 @@
 // src/components/teams/TeamRoster.tsx
 import React from "react";
 import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
-import { Player } from "@/src/types/team";
+import { Player } from "@/src/types/player";
 import { FontAwesome } from "@expo/vector-icons";
 
 interface TeamRosterProps {

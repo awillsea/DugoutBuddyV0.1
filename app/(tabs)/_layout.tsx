@@ -15,7 +15,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="games"
         options={{
-          title: 'Games',
+          title: 'Games/index',
           tabBarIcon: ({ color }) => <FontAwesome name="gamepad" size={24} color={color} />,
         }}
       />
